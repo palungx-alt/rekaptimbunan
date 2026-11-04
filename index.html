@@ -1,0 +1,708 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Rekap Timbunan Vendor - RAJ Group</title>
+    
+    <!-- Font Poppins (Judul/Angka) & Inter (Teks Isi) -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Poppins:wght@500;600;700;800&display=swap" rel="stylesheet">
+    
+    <!-- Library SheetJS untuk Export Excel -->
+    <script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script>
+    
+    <style>
+        :root {
+            --bg-body: #f8fafc;
+            --card-bg: #ffffff;
+            --raj-dark: #0f3d2e;
+            --raj-primary: #10b981;
+            --raj-glow: rgba(16, 185, 129, 0.15);
+            --text-main: #1e293b;
+            --text-muted: #64748b;
+            --border-color: #e2e8f0;
+            --shadow-card: 0 10px 30px -10px rgba(15, 61, 46, 0.08);
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        
+        body { 
+            background-color: var(--bg-body);
+            background-image: 
+                radial-gradient(circle at 10% 20%, rgba(16, 185, 129, 0.04) 0%, transparent 40%),
+                radial-gradient(circle at 90% 80%, rgba(15, 61, 46, 0.04) 0%, transparent 40%);
+            color: var(--text-main); 
+            min-height: 100vh;
+            display: flex; justify-content: center; padding: 2rem 1rem;
+            font-family: 'Inter', sans-serif;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        .main-wrapper { width: 100%; max-width: 950px; position: relative; }
+
+        /* --- HEADER CLEAN & READABLE --- */
+        .header-clean {
+            background: var(--card-bg); 
+            border-radius: 24px; 
+            padding: 2.5rem 2rem 2rem;
+            margin-bottom: 2rem; text-align: center;
+            box-shadow: var(--shadow-card); 
+            border: 1px solid var(--border-color);
+            position: relative; overflow: hidden;
+        }
+        
+        .header-clean::before {
+            content: ''; position: absolute; top: 0; left: 0; width: 100%; height: 4px;
+            background: linear-gradient(90deg, transparent, var(--raj-primary), transparent);
+        }
+
+        .logo-container { margin-bottom: 1.2rem; display: inline-block; }
+        
+        .logo-img { 
+            width: 160px; height: 160px; 
+            object-fit: contain; 
+            filter: drop-shadow(0 10px 20px rgba(16, 185, 129, 0.2));
+            transition: transform 0.3s ease;
+        }
+        .logo-container:hover .logo-img { transform: scale(1.03); }
+
+        .company-title {
+            font-family: 'Poppins', sans-serif;
+            font-size: 1.5rem; font-weight: 700; 
+            color: var(--raj-dark); 
+            letter-spacing: -0.5px; margin-bottom: 0.3rem;
+        }
+
+        .company-subtitle {
+            font-family: 'Inter', sans-serif;
+            font-size: 0.9rem; font-weight: 500; 
+            color: var(--text-muted); letter-spacing: 0.5px;
+        }
+
+        /* --- PERIOD LABEL --- */
+        .period-label {
+            text-align: center; margin-bottom: 1.5rem;
+            font-family: 'Poppins', sans-serif;
+            font-size: 1.3rem; font-weight: 600; 
+            color: var(--raj-primary);
+            display: flex; align-items: center; justify-content: center; gap: 0.8rem;
+        }
+        .period-label::before, .period-label::after {
+            content: ''; height: 2px; width: 30px;
+            background: var(--raj-primary); opacity: 0.4; border-radius: 2px;
+        }
+
+        /* --- GRAND TOTAL CARD --- */
+        .grand-total-card {
+            background: var(--raj-dark);
+            border-radius: 20px; padding: 2rem; margin-bottom: 2rem;
+            color: white; text-align: center; 
+            box-shadow: 0 15px 35px -5px rgba(15, 61, 46, 0.3);
+            position: relative; overflow: hidden;
+        }
+        
+        .grand-total-card::after {
+            content: ''; position: absolute; top:0; left:0; width:100%; height:100%;
+            background-image: linear-gradient(rgba(255,255,255,0.02) 1px, transparent 1px),
+            linear-gradient(90deg, rgba(255,255,255,0.02) 1px, transparent 1px);
+            background-size: 24px 24px; pointer-events: none;
+        }
+
+        .grand-total-label { 
+            font-family: 'Inter', sans-serif;
+            font-size: 0.85rem; opacity: 0.8; font-weight: 500; 
+            text-transform: uppercase; letter-spacing: 1px; margin-bottom: 0.5rem; 
+        }
+        .grand-total-value { 
+            font-family: 'Poppins', sans-serif;
+            font-size: 3.2rem; font-weight: 700; line-height: 1; letter-spacing: -1px;
+        }
+        .grand-total-unit { 
+            font-family: 'Inter', sans-serif;
+            font-size: 1rem; font-weight: 500; opacity: 0.8; margin-left: 0.5rem; 
+        }
+
+        /* --- CONTROLS ROW --- */
+        .controls-row {
+            display: flex; gap: 1rem; margin-bottom: 2rem; flex-wrap: wrap; align-items: stretch;
+        }
+        
+        .search-wrapper { flex: 1; min-width: 200px; position: relative; }
+        .search-input {
+            width: 100%; padding: 0.9rem 1.2rem; padding-left: 3.2rem;
+            background: var(--card-bg); border: 1px solid var(--border-color);
+            border-radius: 12px; color: var(--text-main); font-family: 'Inter', sans-serif; font-size: 1rem; font-weight: 500;
+            outline: none; transition: all 0.2s ease;
+        }
+        .search-input:focus { border-color: var(--raj-primary); box-shadow: 0 0 0 3px var(--raj-glow); }
+        .search-icon {
+            position: absolute; left: 1rem; top: 50%; transform: translateY(-50%);
+            color: var(--raj-primary); width: 20px; height: 20px; pointer-events: none;
+        }
+
+        .filter-group { display: flex; gap: 0.5rem; flex-wrap: wrap; align-items: center; }
+        
+        .btn-filter {
+            padding: 0.7rem 1.2rem; border-radius: 12px; border: 1px solid var(--border-color);
+            background: white; color: var(--text-muted); font-family: 'Inter', sans-serif; font-weight: 600; cursor: pointer;
+            transition: all 0.2s; font-size: 0.9rem; white-space: nowrap;
+        }
+        .btn-filter.active, .btn-filter:hover {
+            background: var(--raj-primary); color: white; border-color: var(--raj-primary);
+            box-shadow: 0 4px 12px rgba(16, 185, 129, 0.2);
+        }
+
+        .month-select {
+            padding: 0.7rem 2.2rem 0.7rem 1rem; border-radius: 12px; border: 1px solid var(--border-color);
+            background: white; color: var(--text-main); font-family: 'Inter', sans-serif; font-size: 0.9rem; font-weight: 500;
+            cursor: pointer; outline: none; appearance: none;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%2364748b' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+            background-repeat: no-repeat; background-position: right 10px center;
+            min-width: 160px; transition: all 0.2s;
+        }
+        .month-select:focus { border-color: var(--raj-primary); box-shadow: 0 0 0 3px var(--raj-glow); }
+
+        .action-btn {
+            padding: 0.7rem 1.2rem; border-radius: 12px; border: none;
+            background: var(--raj-dark); color: white; font-family: 'Inter', sans-serif; font-weight: 600; cursor: pointer;
+            transition: all 0.2s; font-size: 0.9rem; display: flex; align-items: center; gap: 0.5rem;
+            white-space: nowrap;
+        }
+        .action-btn:hover { background: var(--raj-primary); transform: translateY(-1px); }
+
+        /* --- VENDOR LIST --- */
+        .client-grid {
+            display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 1.2rem;
+        }
+        .client-card {
+            background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 20px;
+            padding: 1.5rem; cursor: pointer; transition: all 0.2s ease;
+            box-shadow: var(--shadow-card); position: relative; overflow: hidden;
+        }
+        .client-card:hover { 
+            transform: translateY(-3px); 
+            border-color: var(--raj-primary); 
+            box-shadow: 0 10px 25px -5px rgba(16, 185, 129, 0.1);
+        }
+        
+        .client-card::before {
+            content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 4px;
+            background: var(--raj-primary); transform: scaleY(0); transition: transform 0.2s;
+        }
+        .client-card:hover::before { transform: scaleY(1); }
+
+        .client-name { 
+            font-family: 'Inter', sans-serif;
+            font-size: 1.1rem; font-weight: 600; color: var(--raj-dark); 
+            margin-bottom: 0.6rem; word-break: break-word; line-height: 1.4;
+        }
+        .client-total { 
+            font-family: 'Poppins', sans-serif;
+            font-size: 1.6rem; font-weight: 700; color: var(--raj-primary); 
+            letter-spacing: -0.5px;
+        }
+        .client-unit { 
+            font-family: 'Inter', sans-serif;
+            font-size: 0.9rem; color: var(--text-muted); font-weight: 500; margin-left: 4px;
+        }
+        .client-meta { 
+            font-family: 'Inter', sans-serif;
+            font-size: 0.85rem; color: var(--text-muted); margin-top: 0.8rem; 
+            display: flex; justify-content: space-between; align-items: center; 
+            border-top: 1px dashed var(--border-color); padding-top: 0.8rem;
+        }
+
+        /* --- MODAL DETAIL DENGAN ALAMAT --- */
+        .modal-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(15, 61, 46, 0.7); backdrop-filter: blur(6px);
+            z-index: 1000; display: none; align-items: center; justify-content: center; padding: 1rem;
+        }
+        .modal-overlay.active { display: flex; }
+        
+        .modal-content {
+            background: white; border-radius: 24px; width: 100%; max-width: 550px;
+            max-height: 85vh; overflow-y: auto; padding: 2rem; position: relative;
+            box-shadow: 0 20px 40px -10px rgba(0,0,0,0.2);
+            border: 1px solid var(--border-color);
+        }
+        .modal-header { 
+            display: flex; justify-content: space-between; align-items: flex-start; 
+            margin-bottom: 1.5rem; border-bottom: 1px solid var(--border-color); padding-bottom: 1rem; 
+        }
+        .modal-title-group { flex: 1; margin-right: 1rem; }
+        .modal-title { 
+            font-family: 'Poppins', sans-serif;
+            font-size: 1.2rem; font-weight: 600; color: var(--raj-dark); word-break: break-word; margin-bottom: 0.5rem;
+        }
+        .modal-address {
+            font-family: 'Inter', sans-serif;
+            font-size: 0.9rem; color: var(--text-muted); line-height: 1.5;
+            display: flex; align-items: flex-start; gap: 0.5rem;
+        }
+        .modal-address svg { width: 16px; height: 16px; color: var(--raj-primary); flex-shrink: 0; margin-top: 2px; }
+        
+        .modal-close {
+            background: var(--bg-body); border: none; width: 36px; height: 36px;
+            border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center;
+            color: var(--text-muted); transition: 0.2s; flex-shrink: 0;
+        }
+        .modal-close:hover { background: var(--raj-primary); color: white; }
+
+        .detail-list { list-style: none; }
+        .detail-item {
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 1rem 0; border-bottom: 1px solid var(--border-color);
+        }
+        .detail-item:last-child { border-bottom: none; }
+        .detail-name { 
+            font-family: 'Inter', sans-serif;
+            font-weight: 500; color: var(--text-main); word-break: break-word; flex: 1; margin-right: 1rem; font-size: 1rem;
+        }
+        .detail-weight { 
+            font-family: 'Poppins', sans-serif;
+            font-weight: 600; color: var(--raj-primary); font-size: 1.1rem; white-space: nowrap; 
+        }
+        
+        .modal-footer {
+            margin-top: 1.5rem; padding-top: 1rem; border-top: 2px dashed var(--border-color);
+            display: flex; justify-content: space-between; align-items: center;
+        }
+        .modal-total-label { 
+            font-family: 'Inter', sans-serif;
+            font-size: 0.9rem; color: var(--text-muted); font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;
+        }
+        .modal-total-val { 
+            font-family: 'Poppins', sans-serif;
+            font-size: 1.6rem; font-weight: 700; color: var(--raj-dark); letter-spacing: -0.5px;
+        }
+
+        .loading-state { text-align: center; padding: 4rem; color: var(--text-muted); }
+        .spinner { width: 40px; height: 40px; border: 3px solid var(--border-color); border-top-color: var(--raj-primary); border-radius: 50%; animation: spin 1s linear infinite; margin: 0 auto 1rem; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        @media (max-width: 768px) {
+            .header-clean { padding: 2rem 1.5rem 1.5rem; }
+            .logo-img { width: 120px; height: 120px; }
+            .company-title { font-size: 1.3rem; }
+            .period-label { font-size: 1.1rem; }
+            .client-grid { grid-template-columns: 1fr; }
+            .controls-row { flex-direction: column; }
+            .filter-group { justify-content: center; width: 100%; }
+            .month-select, .action-btn { width: 100%; justify-content: center; }
+            .grand-total-value { font-size: 2.5rem; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="main-wrapper">
+        <header class="header-clean">
+            <div class="logo-container">
+                <img src="logo.png" alt="RAJ Logo" class="logo-img" onerror="this.style.display='none'">
+            </div>
+            <h1 class="company-title">REZEKI AMANAH JAYA GROUP</h1>
+            <p class="company-subtitle">Supplier & Waste Solution Partner</p>
+        </header>
+
+        <div class="period-label" id="periodLabel">NOVEMBER 2026</div>
+
+        <div class="grand-total-card">
+            <div class="grand-total-label">Total Timbunan Keseluruhan</div>
+            <div class="grand-total-value">
+                <span id="grandTotalValue">0</span>
+                <span class="grand-total-unit">KG</span>
+            </div>
+        </div>
+
+        <div class="controls-row">
+            <div class="search-wrapper">
+                <svg class="search-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+                <input type="text" id="searchInput" class="search-input" placeholder="Cari nama vendor...">
+            </div>
+            
+            <div class="filter-group">
+                <button class="btn-filter active" onclick="setFilter('1m', this)">1 Bulan</button>
+                <button class="btn-filter" onclick="setFilter('6m', this)">6 Bulan</button>
+                <button class="btn-filter" onclick="setFilter('all', this)">Semua</button>
+                
+                <select id="monthSelect" class="month-select" onchange="handleMonthChange(this)">
+                    <option value="">Pilih Bulan...</option>
+                </select>
+                
+                <button class="action-btn" onclick="exportToExcel()">
+                    <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+                    Export Excel
+                </button>
+            </div>
+        </div>
+
+        <div id="loadingState" class="loading-state">
+            <div class="spinner"></div>
+            <p style="font-family: 'Inter', sans-serif; font-weight: 500;">Memuat data sistem...</p>
+        </div>
+
+        <div id="clientGrid" class="client-grid"></div>
+    </div>
+
+    <!-- Modal Detail Dengan Alamat -->
+    <div id="detailModal" class="modal-overlay" onclick="closeModal(event)">
+        <div class="modal-content" onclick="event.stopPropagation()">
+            <div class="modal-header">
+                <div class="modal-title-group">
+                    <div class="modal-title" id="modalClientName">Nama Vendor</div>
+                    <div class="modal-address" id="modalAddress">
+                        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
+                        <span id="addressText">Memuat alamat...</span>
+                    </div>
+                </div>
+                <button class="modal-close" onclick="closeModal()">✕</button>
+            </div>
+            <ul id="detailList" class="detail-list"></ul>
+            <div class="modal-footer">
+                <span class="modal-total-label">Total Timbunan</span>
+                <span class="modal-total-val" id="modalTotalWeight">0 KG</span>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_URL = 'https://script.google.com/macros/s/AKfycbylgW2dzHDG51D9qHtDJ0K5cwmidBgwK9Y7a1lPEoYRskK0kXRrEUYSbjjAFeOyi-Dz/exec';
+        
+        let currentFilter = '1m';
+        let selectedYear = null;
+        let selectedMonthIdx = null;
+        let searchKeyword = '';
+        let allTransactions = [];
+        let allClients = []; // Data dari sheet Clients
+        let filteredByTime = []; 
+
+        function initMonthDropdown() {
+            const select = document.getElementById('monthSelect');
+            const now = new Date();
+            const currentYear = now.getFullYear();
+            const months = ["Januari", "Februari", "Maret", "April", "Mei", "Juni", "Juli", "Agustus", "September", "Oktober", "November", "Desember"];
+            
+            for(let y = currentYear - 2; y <= currentYear + 1; y++) {
+                const optgroup = document.createElement('optgroup');
+                optgroup.label = y;
+                
+                months.forEach((m, idx) => {
+                    const option = document.createElement('option');
+                    option.value = `${y}-${idx}`;
+                    option.textContent = m;
+                    optgroup.appendChild(option);
+                });
+                select.appendChild(optgroup);
+            }
+        }
+
+        async function fetchData() {
+            const loading = document.getElementById('loadingState');
+            const grid = document.getElementById('clientGrid');
+            
+            loading.style.display = 'block';
+            grid.innerHTML = '';
+            initMonthDropdown();
+
+            try {
+                // Ambil data Transaksi DAN Clients secara paralel
+                const [txRes, clientRes] = await Promise.all([
+                    fetch(`${API_URL}?action=getTransactions`),
+                    fetch(`${API_URL}?action=getClients`)
+                ]);
+
+                const txResult = await txRes.json();
+                const clientResult = await clientRes.json();
+                
+                if(txResult.status === 'success' && txResult.pembelian) {
+                    allTransactions = txResult.pembelian;
+                } else {
+                    throw new Error('Data pembelian tidak ditemukan');
+                }
+
+                if(clientResult.status === 'success' && clientResult.clients) {
+                    allClients = clientResult.clients;
+                } else {
+                    console.warn('Data clients gagal dimuat, alamat tidak akan tampil.');
+                    allClients = [];
+                }
+
+                applyTimeFilter();
+            } catch(err) {
+                grid.innerHTML = `<div style="grid-column:1/-1; text-align:center; padding:3rem; color:#ef4444; font-family:'Inter'; font-weight:500;">⚠️ Gagal memuat data: ${err.message}</div>`;
+                updateGrandTotal(0);
+            } finally {
+                loading.style.display = 'none';
+            }
+        }
+
+        function setFilter(filter, btnEl) {
+            currentFilter = filter;
+            selectedYear = null;
+            selectedMonthIdx = null;
+            document.getElementById('monthSelect').value = '';
+            
+            document.querySelectorAll('.btn-filter').forEach(btn => btn.classList.remove('active'));
+            if(btnEl) btnEl.classList.add('active');
+            
+            applyTimeFilter();
+        }
+
+        function handleMonthChange(select) {
+            if(select.value) {
+                const [year, month] = select.value.split('-').map(Number);
+                selectedYear = year;
+                selectedMonthIdx = month;
+                currentFilter = 'custom';
+                
+                document.querySelectorAll('.btn-filter').forEach(btn => btn.classList.remove('active'));
+                applyTimeFilter();
+            }
+        }
+
+        function updatePeriodLabel() {
+            const label = document.getElementById('periodLabel');
+            const months = ["JANUARI", "FEBRUARI", "MARET", "APRIL", "MEI", "JUNI", "JULI", "AGUSTUS", "SEPTEMBER", "OKTOBER", "NOVEMBER", "DESEMBER"];
+            
+            if(currentFilter === 'custom' && selectedYear !== null && selectedMonthIdx !== null) {
+                label.textContent = `${months[selectedMonthIdx]} ${selectedYear}`;
+            } else if(currentFilter === '1m') {
+                const now = new Date();
+                label.textContent = `${months[now.getMonth()]} ${now.getFullYear()} (30 Hari Terakhir)`;
+            } else if(currentFilter === '6m') {
+                label.textContent = "6 BULAN TERAKHIR";
+            } else {
+                label.textContent = "SEMUA DATA TRANSAKSI";
+            }
+        }
+
+        function applyTimeFilter() {
+            updatePeriodLabel();
+            const now = new Date();
+            
+            filteredByTime = allTransactions.filter(tx => {
+                const txDate = new Date(tx.Tanggal || tx.tanggal);
+                if(isNaN(txDate.getTime())) return false;
+
+                if(currentFilter === '1m') {
+                    const oneMonthAgo = new Date(now.getFullYear(), now.getMonth() - 1, now.getDate());
+                    return txDate >= oneMonthAgo;
+                } else if(currentFilter === '6m') {
+                    const sixMonthsAgo = new Date(now.getFullYear(), now.getMonth() - 6, now.getDate());
+                    return txDate >= sixMonthsAgo;
+                } else if(currentFilter === 'custom' && selectedYear !== null) {
+                    return txDate.getFullYear() === selectedYear && txDate.getMonth() === selectedMonthIdx;
+                }
+                return true;
+            });
+
+            renderClients();
+        }
+
+        document.getElementById('searchInput').addEventListener('input', (e) => {
+            searchKeyword = e.target.value.toLowerCase().trim();
+            renderClients();
+        });
+
+        function updateGrandTotal(total) {
+            document.getElementById('grandTotalValue').textContent = total.toLocaleString('id-ID');
+        }
+
+        // FUNGSI PENCOCOKAN NAMA (SMART MATCHING) - SUDAH DIPERBAIKI
+        function findClientAddress(vendorName) {
+            if(!allClients || allClients.length === 0) return null;
+            
+            const cleanVendor = vendorName.trim().toLowerCase();
+            
+            // 1. Exact Match
+            let match = allClients.find(c => String(c.name || c.Nama_Client || '').trim().toLowerCase() === cleanVendor);
+            if(match) return match.address || match.Alamat || '';
+
+            // 2. Partial Match (Jika nama vendor mengandung nama client atau sebaliknya)
+            match = allClients.find(c => {
+                const cleanClient = String(c.name || c.Nama_Client || '').trim().toLowerCase();
+                return cleanVendor.includes(cleanClient) || cleanClient.includes(cleanVendor);
+            });
+            if(match) return match.address || match.Alamat || '';
+
+            // 3. Fuzzy Word Match (Cek kata per kata)
+            const vendorWords = cleanVendor.split(/\s+/);
+            match = allClients.find(c => {
+                const cleanClient = String(c.name || c.Nama_Client || '').trim().toLowerCase();
+                const clientWords = cleanClient.split(/\s+/);
+                // Jika minimal 2 kata cocok, anggap sama
+                const commonWords = vendorWords.filter(w => clientWords.includes(w) && w.length > 2);
+                return commonWords.length >= 2;
+            });
+            if(match) return match.address || match.Alamat || '';
+
+            return null;
+        }
+
+        function renderClients() {
+            const grid = document.getElementById('clientGrid');
+            grid.innerHTML = '';
+
+            let displayTx = filteredByTime;
+            if(searchKeyword) {
+                displayTx = filteredByTime.filter(tx => {
+                    const vendor = (tx.Vendor_Supplier || tx.vendor_supplier || '').toLowerCase();
+                    return vendor.includes(searchKeyword);
+                });
+            }
+
+            const clientMap = {};
+            let grandTotal = 0;
+
+            displayTx.forEach(tx => {
+                const vendorName = (tx.Vendor_Supplier || tx.vendor_supplier || 'Tanpa Nama').trim();
+                const weight = parseFloat(tx.Jumlah_Kg_Unit || tx.jumlah_kg_unit || 0);
+                
+                if(!clientMap[vendorName]) {
+                    // Cari alamat saat pertama kali ketemu vendor ini
+                    const address = findClientAddress(vendorName);
+                    clientMap[vendorName] = { 
+                        totalWeight: 0, 
+                        count: 0,
+                        address: address 
+                    };
+                }
+                clientMap[vendorName].totalWeight += weight;
+                clientMap[vendorName].count += 1;
+                grandTotal += weight;
+            });
+
+            updateGrandTotal(grandTotal);
+
+            const sortedClients = Object.entries(clientMap)
+                .sort((a, b) => b[1].totalWeight - a[1].totalWeight);
+
+            if(sortedClients.length === 0) {
+                const msg = searchKeyword ? `Tidak ada vendor "${searchKeyword}"` : 'Tidak ada data untuk periode ini.';
+                grid.innerHTML = `<div style="grid-column:1/-1; text-align:center; padding:4rem; color:var(--text-muted); font-family:'Inter'; font-weight:500;">${msg}</div>`;
+                return;
+            }
+
+            sortedClients.forEach(([name, data]) => {
+                const card = document.createElement('div');
+                card.className = 'client-card';
+                card.onclick = () => showDetail(name, data.address, displayTx);
+                card.innerHTML = `
+                    <div class="client-name">${name}</div>
+                    <div class="client-total">${data.totalWeight.toLocaleString('id-ID')} <span class="client-unit">KG</span></div>
+                    <div class="client-meta">
+                        <span>${data.count} Transaksi</span>
+                        <span style="color:var(--raj-primary); font-weight:600;">Lihat Detail →</span>
+                    </div>
+                `;
+                grid.appendChild(card);
+            });
+        }
+
+        // FUNGSI SHOW DETAIL DENGAN ALAMAT
+        function showDetail(vendorName, vendorAddress, transactions) {
+            const modal = document.getElementById('detailModal');
+            const title = document.getElementById('modalClientName');
+            const addressText = document.getElementById('addressText');
+            const list = document.getElementById('detailList');
+            const totalEl = document.getElementById('modalTotalWeight');
+
+            title.textContent = vendorName;
+            
+            // Tampilkan alamat atau fallback
+            if(vendorAddress && String(vendorAddress).trim() !== '') {
+                addressText.textContent = vendorAddress;
+                addressText.style.fontStyle = 'normal';
+                addressText.style.opacity = '1';
+            } else {
+                addressText.textContent = 'Alamat belum terdaftar di database client';
+                addressText.style.fontStyle = 'italic';
+                addressText.style.opacity = '0.7';
+            }
+
+            list.innerHTML = '';
+
+            const itemMap = {};
+            let grandTotal = 0;
+
+            transactions.forEach(tx => {
+                const txVendor = (tx.Vendor_Supplier || tx.vendor_supplier || '').trim();
+                if(txVendor !== vendorName) return;
+
+                const itemName = tx.Nama_Barang_Material || tx.nama_barang_material || 'Unknown';
+                const weight = parseFloat(tx.Jumlah_Kg_Unit || tx.jumlah_kg_unit || 0);
+
+                if(!itemMap[itemName]) itemMap[itemName] = 0;
+                itemMap[itemName] += weight;
+                grandTotal += weight;
+            });
+
+            const sortedItems = Object.entries(itemMap).sort((a,b) => b[1] - a[1]);
+
+            sortedItems.forEach(([name, weight]) => {
+                const li = document.createElement('li');
+                li.className = 'detail-item';
+                li.innerHTML = `
+                    <span class="detail-name">${name}</span>
+                    <span class="detail-weight">${weight.toLocaleString('id-ID')} KG</span>
+                `;
+                list.appendChild(li);
+            });
+
+            totalEl.textContent = `${grandTotal.toLocaleString('id-ID')} KG`;
+            modal.classList.add('active');
+            document.body.style.overflow = 'hidden';
+        }
+
+        function closeModal(e) {
+            if(e && e.target !== e.currentTarget) return;
+            document.getElementById('detailModal').classList.remove('active');
+            document.body.style.overflow = '';
+        }
+
+        function exportToExcel() {
+            let exportData = filteredByTime;
+            if(searchKeyword) {
+                exportData = exportData.filter(tx => {
+                    const vendor = (tx.Vendor_Supplier || tx.vendor_supplier || '').toLowerCase();
+                    return vendor.includes(searchKeyword);
+                });
+            }
+
+            if(exportData.length === 0) {
+                alert("Tidak ada data untuk di-export.");
+                return;
+            }
+
+            const formattedData = exportData.map(tx => {
+                const vendorName = (tx.Vendor_Supplier || tx.vendor_supplier || '').trim();
+                const address = findClientAddress(vendorName) || '-';
+                
+                return {
+                    "Tanggal": tx.Tanggal || tx.tanggal,
+                    "ID Pembelian": tx.ID_Pembelian || tx.id_pembelian,
+                    "Vendor / Supplier": vendorName,
+                    "Alamat": address,
+                    "Nama Barang": tx.Nama_Barang_Material || tx.nama_barang_material,
+                    "Berat (Kg)": parseFloat(tx.Jumlah_Kg_Unit || tx.jumlah_kg_unit || 0),
+                    "Status": tx.Status || tx.status
+                };
+            });
+
+            const ws = XLSX.utils.json_to_sheet(formattedData);
+            const wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, ws, "Timbunan Vendor");
+
+            const periodText = document.getElementById('periodLabel').textContent.toLowerCase().replace(/\s+/g, '-');
+            const fileName = `TIMBUNAN-VENDOR-${periodText}.xlsx`;
+
+            XLSX.writeFile(wb, fileName);
+        }
+
+        window.onload = fetchData;
+    </script>
+</body>
+</html>
