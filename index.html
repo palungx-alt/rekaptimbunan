@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Rekap Timbunan Vendor - RAJ Group</title>
+    <title>Rekap Timbunan Vendor - Kota Tangerang</title>
     
     <!-- Font Poppins & Inter -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -81,24 +81,7 @@
             color: var(--text-muted); letter-spacing: 0.5px;
         }
 
-        /* --- TAB WILAYAH --- */
-        .region-tabs {
-            display: flex; gap: 0.5rem; margin-bottom: 1.5rem; 
-            background: white; padding: 0.5rem; border-radius: 16px;
-            border: 1px solid var(--border-color); box-shadow: 0 2px 10px rgba(0,0,0,0.02);
-        }
-        .tab-btn {
-            flex: 1; padding: 0.8rem; border: none; border-radius: 12px;
-            background: transparent; color: var(--text-muted); 
-            font-family: 'Inter', sans-serif; font-weight: 600; font-size: 0.9rem;
-            cursor: pointer; transition: all 0.2s;
-        }
-        .tab-btn.active {
-            background: var(--raj-primary); color: white;
-            box-shadow: 0 4px 12px rgba(16, 185, 129, 0.2);
-        }
-
-        /* --- PERIOD LABEL --- */
+        /* --- PERIOD LABEL (KHUSUS KOTA TANGERANG) --- */
         .period-label {
             text-align: center; margin-bottom: 1.5rem;
             font-family: 'Poppins', sans-serif;
@@ -310,8 +293,6 @@
             .filter-group { justify-content: center; width: 100%; }
             .month-select, .action-btn { width: 100%; justify-content: center; }
             .grand-total-value { font-size: 2.5rem; }
-            .region-tabs { flex-wrap: wrap; }
-            .tab-btn { font-size: 0.8rem; padding: 0.6rem; }
         }
     </style>
 </head>
@@ -323,17 +304,11 @@
                 <img src="logo.png" alt="RAJ Logo" class="logo-img" onerror="this.style.display='none'">
             </div>
             <h1 class="company-title">REZEKI AMANAH JAYA GROUP</h1>
-            <p class="company-subtitle">Supplier & Waste Solution Partner</p>
+            <p class="company-subtitle">Data Timbunan Vendor - Kota Tangerang</p>
         </header>
 
-        <!-- TAB WILAYAH -->
-        <div class="region-tabs">
-            <button class="tab-btn active" onclick="setRegion('all', this)">Semua Wilayah</button>
-            <button class="tab-btn" onclick="setRegion('kota', this)">Kota Tangerang</button>
-            <button class="tab-btn" onclick="setRegion('kab', this)">Kabupaten Tangerang</button>
-        </div>
-
-        <div class="period-label" id="periodLabel">NOVEMBER 2026</div>
+        <!-- LABEL PERIODE KHUSUS KOTA TANGERANG -->
+        <div class="period-label" id="periodLabel">KOTA TANGERANG</div>
 
         <div class="grand-total-card">
             <div class="grand-total-label">Total Timbunan Keseluruhan</div>
@@ -401,7 +376,6 @@
         let selectedYear = null;
         let selectedMonthIdx = null;
         let searchKeyword = '';
-        let currentRegion = 'all'; // all, kota, kab
         
         let allTransactions = [];
         let allClients = [];
@@ -490,37 +464,71 @@
             }
         }
 
-        // FUNGSI BARU: SET FILTER WILAYAH
-        function setRegion(region, btnEl) {
-            currentRegion = region;
-            
-            document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
-            if(btnEl) btnEl.classList.add('active');
-            
-            renderClients(); // Re-render tanpa fetch ulang
-        }
-
+        // UPDATE LABEL PERIODE DENGAN PREFIX KOTA TANGERANG
         function updatePeriodLabel() {
             const label = document.getElementById('periodLabel');
             const months = ["JANUARI", "FEBRUARI", "MARET", "APRIL", "MEI", "JUNI", "JULI", "AGUSTUS", "SEPTEMBER", "OKTOBER", "NOVEMBER", "DESEMBER"];
             
             if(currentFilter === 'custom' && selectedYear !== null && selectedMonthIdx !== null) {
-                label.textContent = `${months[selectedMonthIdx]} ${selectedYear}`;
+                label.textContent = `KOTA TANGERANG - ${months[selectedMonthIdx]} ${selectedYear}`;
             } else if(currentFilter === '1m') {
                 const now = new Date();
-                label.textContent = `${months[now.getMonth()]} ${now.getFullYear()} (30 Hari Terakhir)`;
+                label.textContent = `KOTA TANGERANG - ${months[now.getMonth()]} ${now.getFullYear()} (30 Hari Terakhir)`;
             } else if(currentFilter === '6m') {
-                label.textContent = "6 BULAN TERAKHIR";
+                label.textContent = "KOTA TANGERANG - 6 BULAN TERAKHIR";
             } else {
-                label.textContent = "SEMUA DATA TRANSAKSI";
+                label.textContent = "KOTA TANGERANG - SEMUA DATA";
             }
+        }
+
+        // FUNGSI DETEKSI WILAYAH DARI ALAMAT
+        function isKotaTangerang(address) {
+            if(!address) return false;
+            const addr = address.toLowerCase();
+            
+            return addr.includes('kota tangerang') || 
+                   addr.includes('karawaci') || addr.includes('cipondoh') || 
+                   addr.includes('batuceper') || addr.includes('cibodas') || addr.includes('jatiuwung') ||
+                   addr.includes('larangan') || addr.includes('neglasari') || addr.includes('periuk') || 
+                   addr.includes('pinang') || addr.includes('kec. tangerang');
+        }
+
+        // FUNGSI PENCOCOKAN NAMA CLIENT YANG LEBIH PINTAR
+        function findClientAddress(vendorName) {
+            if(!allClients || allClients.length === 0 || !vendorName) return null;
+            
+            const cleanVendor = vendorName.trim().toLowerCase();
+            
+            // Level 1: Exact Match
+            let match = allClients.find(c => String(c.name || c.Nama_Client || '').trim().toLowerCase() === cleanVendor);
+            if(match) return match.address || match.Alamat || '';
+
+            // Level 2: Partial Match
+            match = allClients.find(c => {
+                const cleanClient = String(c.name || c.Nama_Client || '').trim().toLowerCase();
+                return cleanVendor.includes(cleanClient) || cleanClient.includes(cleanVendor);
+            });
+            if(match) return match.address || match.Alamat || '';
+
+            // Level 3: Word Matching (Cocok minimal 2 kata penting)
+            const vendorWords = cleanVendor.split(/[\s\/\-]+/).filter(w => w.length > 2);
+            match = allClients.find(c => {
+                const cleanClient = String(c.name || c.Nama_Client || '').trim().toLowerCase();
+                const clientWords = cleanClient.split(/[\s\/\-]+/).filter(w => w.length > 2);
+                const commonWords = vendorWords.filter(w => clientWords.includes(w));
+                return commonWords.length >= 2;
+            });
+            if(match) return match.address || match.Alamat || '';
+
+            return null;
         }
 
         function applyTimeFilter() {
             updatePeriodLabel();
             const now = new Date();
             
-            filteredByTime = allTransactions.filter(tx => {
+            // 1. Filter Waktu Dulu
+            let timeFiltered = allTransactions.filter(tx => {
                 const txDate = new Date(tx.Tanggal || tx.tanggal);
                 if(isNaN(txDate.getTime())) return false;
 
@@ -536,6 +544,13 @@
                 return true;
             });
 
+            // 2. Filter Wilayah (HANYA KOTA TANGERANG)
+            filteredByTime = timeFiltered.filter(tx => {
+                const vendorName = String(tx.Vendor_Supplier || '').trim();
+                const address = findClientAddress(vendorName);
+                return isKotaTangerang(address);
+            });
+
             renderClients();
         }
 
@@ -548,87 +563,16 @@
             document.getElementById('grandTotalValue').textContent = total.toLocaleString('id-ID');
         }
 
-        // FUNGSI DETEKSI WILAYAH DARI ALAMAT
-        function detectRegion(address) {
-            if(!address) return 'unknown';
-            const addr = address.toLowerCase();
-            
-            // Deteksi Kota Tangerang
-            if(addr.includes('kota tangerang') || addr.includes('kec. tangerang') || 
-               addr.includes('batuceper') || addr.includes('cibodas') || addr.includes('jatiuwung') ||
-               addr.includes('karawaci') || addr.includes('larangan') || addr.includes('neglasari') ||
-               addr.includes('periuk') || addr.includes('pinang') || addr.includes('cipondoh')) {
-                return 'kota';
-            }
-            
-            // Deteksi Kabupaten Tangerang
-            if(addr.includes('kabupaten tangerang') || addr.includes('kab. tangerang') || 
-               addr.includes('cikupa') || addr.includes('cisauk') || addr.includes('curug') ||
-               addr.includes('gunungkaler') || addr.includes('jambe') || addr.includes('jayanti') ||
-               addr.includes('kelapa dua') || addr.includes('kemiri') || addr.includes('kosambi') ||
-               addr.includes('kresek') || addr.includes('legok') || addr.includes('mauk') ||
-               addr.includes('mekarbaru') || addr.includes('pagedangan') || addr.includes('panongan') ||
-               addr.includes('pasarkemis') || addr.includes('rajeg') || addr.includes('sepatan') ||
-               addr.includes('serpong') || addr.includes('sindang jaya') || addr.includes('solear') ||
-               addr.includes('sukadiri') || addr.includes('sukamulya') || addr.includes('teluknaga') ||
-               addr.includes('tigaraksa')) {
-                return 'kab';
-            }
-            
-            return 'other';
-        }
-
-        // FUNGSI PENCOCOKAN NAMA CLIENT
-        function findClientAddress(vendorName) {
-            if(!allClients || allClients.length === 0) return null;
-            
-            const cleanVendor = vendorName.trim().toLowerCase();
-            
-            // 1. Exact Match
-            let match = allClients.find(c => String(c.name || c.Nama_Client || '').trim().toLowerCase() === cleanVendor);
-            if(match) return match.address || match.Alamat || '';
-
-            // 2. Partial Match
-            match = allClients.find(c => {
-                const cleanClient = String(c.name || c.Nama_Client || '').trim().toLowerCase();
-                return cleanVendor.includes(cleanClient) || cleanClient.includes(cleanVendor);
-            });
-            if(match) return match.address || match.Alamat || '';
-
-            // 3. Fuzzy Word Match
-            const vendorWords = cleanVendor.split(/\s+/);
-            match = allClients.find(c => {
-                const cleanClient = String(c.name || c.Nama_Client || '').trim().toLowerCase();
-                const clientWords = cleanClient.split(/\s+/);
-                const commonWords = vendorWords.filter(w => clientWords.includes(w) && w.length > 2);
-                return commonWords.length >= 2;
-            });
-            if(match) return match.address || match.Alamat || '';
-
-            return null;
-        }
-
         function renderClients() {
             const grid = document.getElementById('clientGrid');
             grid.innerHTML = '';
 
             let displayTx = filteredByTime;
             
-            // Filter Search
             if(searchKeyword) {
                 displayTx = displayTx.filter(tx => {
                     const vendor = (tx.Vendor_Supplier || tx.vendor_supplier || '').toLowerCase();
                     return vendor.includes(searchKeyword);
-                });
-            }
-
-            // Filter Wilayah
-            if(currentRegion !== 'all') {
-                displayTx = displayTx.filter(tx => {
-                    const vendorName = (tx.Vendor_Supplier || tx.vendor_supplier || '').trim();
-                    const address = findClientAddress(vendorName);
-                    const region = detectRegion(address);
-                    return region === currentRegion;
                 });
             }
 
@@ -658,7 +602,7 @@
                 .sort((a, b) => b[1].totalWeight - a[1].totalWeight);
 
             if(sortedClients.length === 0) {
-                const msg = searchKeyword ? `Tidak ada vendor "${searchKeyword}"` : 'Tidak ada data untuk filter ini.';
+                const msg = searchKeyword ? `Tidak ada vendor "${searchKeyword}"` : 'Tidak ada data vendor Kota Tangerang untuk periode ini.';
                 grid.innerHTML = `<div style="grid-column:1/-1; text-align:center; padding:4rem; color:var(--text-muted); font-family:'Inter'; font-weight:500;">${msg}</div>`;
                 return;
             }
@@ -739,22 +683,12 @@
         }
 
         function exportToExcel() {
-            // Export hanya data yang sedang tampil (sesuai filter wilayah + waktu + search)
             let exportTx = filteredByTime;
             
             if(searchKeyword) {
                 exportTx = exportTx.filter(tx => {
                     const vendor = (tx.Vendor_Supplier || tx.vendor_supplier || '').toLowerCase();
                     return vendor.includes(searchKeyword);
-                });
-            }
-
-            if(currentRegion !== 'all') {
-                exportTx = exportTx.filter(tx => {
-                    const vendorName = (tx.Vendor_Supplier || tx.vendor_supplier || '').trim();
-                    const address = findClientAddress(vendorName);
-                    const region = detectRegion(address);
-                    return region === currentRegion;
                 });
             }
 
@@ -766,14 +700,12 @@
             const formattedData = exportTx.map(tx => {
                 const vendorName = (tx.Vendor_Supplier || tx.vendor_supplier || '').trim();
                 const address = findClientAddress(vendorName) || '-';
-                const region = detectRegion(address);
-                const regionLabel = region === 'kota' ? 'Kota Tangerang' : (region === 'kab' ? 'Kab. Tangerang' : 'Lainnya');
                 
                 return {
                     "Tanggal": tx.Tanggal || tx.tanggal,
                     "ID Pembelian": tx.ID_Pembelian || tx.id_pembelian,
                     "Vendor / Supplier": vendorName,
-                    "Wilayah": regionLabel,
+                    "Wilayah": "Kota Tangerang",
                     "Alamat": address,
                     "Nama Barang": tx.Nama_Barang_Material || tx.nama_barang_material,
                     "Berat (Kg)": parseFloat(tx.Jumlah_Kg_Unit || tx.jumlah_kg_unit || 0),
@@ -783,11 +715,10 @@
 
             const ws = XLSX.utils.json_to_sheet(formattedData);
             const wb = XLSX.utils.book_new();
-            XLSX.utils.book_append_sheet(wb, ws, "Timbunan Vendor");
+            XLSX.utils.book_append_sheet(wb, ws, "Timbunan Kota Tangerang");
 
             const periodText = document.getElementById('periodLabel').textContent.toLowerCase().replace(/\s+/g, '-');
-            const regionText = currentRegion === 'kota' ? '-kota-tangerang' : (currentRegion === 'kab' ? '-kab-tangerang' : '');
-            const fileName = `TIMBUNAN-VENDOR${regionText}-${periodText}.xlsx`;
+            const fileName = `TIMBUNAN-KOTA-TANGERANG-${periodText}.xlsx`;
 
             XLSX.writeFile(wb, fileName);
         }
